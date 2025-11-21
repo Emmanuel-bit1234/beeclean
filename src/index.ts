@@ -29,12 +29,18 @@ app.route("/auth", auth);
 // User management routes
 app.route("/users", usersRoute);
 
-serve(
-  {
-    fetch: app.fetch,
-    port: 3005,
-  },
-  (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
-  }
-);
+// Export for Vercel serverless functions
+export default app;
+
+// Only start server in development/local environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  serve(
+    {
+      fetch: app.fetch,
+      port: Number(process.env.PORT) || 3005,
+    },
+    (info) => {
+      console.log(`Server is running on http://localhost:${info.port}`);
+    }
+  );
+}
