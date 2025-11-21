@@ -1,3 +1,4 @@
+// Load dotenv for local development (Vercel provides env vars automatically)
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -7,7 +8,10 @@ import * as schema from './schema.js';
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is required');
+  const errorMessage = process.env.VERCEL
+    ? 'DATABASE_URL environment variable is required. Please set it in your Vercel project settings: Settings → Environment Variables → Add DATABASE_URL'
+    : 'DATABASE_URL environment variable is required. Please add it to your .env file.';
+  throw new Error(errorMessage);
 }
 
 // Create the database connection with serverless-friendly options
