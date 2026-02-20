@@ -8,8 +8,20 @@ import type { AuthVariables } from "./types/auth.js";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
-// Enable CORS
-app.use("*", cors());
+// Enable CORS with credentials support
+app.use(
+  "*",
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://beeclean-eight.vercel.app",
+    ],
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  }),
+);
 
 // Health check endpoint
 app.get("/", (c) => {
@@ -28,7 +40,6 @@ app.get("/roles", (c) => {
 // Authentication routes
 app.route("/auth", auth);
 
-
 // User management routes
 app.route("/users", usersRoute);
 
@@ -39,5 +50,5 @@ serve(
   },
   (info) => {
     console.log(`Server is running on http://localhost:${info.port}`);
-  }
+  },
 );
