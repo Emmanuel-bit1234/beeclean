@@ -77,8 +77,15 @@ auth.post('/register', async (c) => {
 
     return c.json(response, 201);
   } catch (error) {
-    console.error('Registration error:', error);
-    return c.json({ error: 'Registration failed' }, 500);
+    const err = error as Error;
+    console.error('Registration error:', err?.message ?? error);
+    // Expose safe error for debugging (e.g. missing column, constraint)
+    const message = err?.message ?? 'Registration failed';
+    const isDbError = message.includes('column') || message.includes('relation') || message.includes('duplicate') || message.includes('violates');
+    return c.json(
+      { error: 'Registration failed', ...(isDbError && { detail: message }) },
+      500
+    );
   }
 });
 

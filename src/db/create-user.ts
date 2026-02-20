@@ -9,7 +9,7 @@ async function createUser() {
   try {
     const name = 'Emmanuel';
     const surname = 'Mbuya';
-    const email = 'emmanuel@example.com';
+    const email = 'emmanuel@localhost.test';
     const password = 'password123';
     const role: RdcPayrollRole = 'Agent';
 
