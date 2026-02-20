@@ -28,7 +28,7 @@ app.get("/", (c) => {
   return c.json({
     message: "Triage CDSS Proxy API",
     status: "running",
-    version: "1.0.0",
+    version: "1.0.1",
   });
 });
 
