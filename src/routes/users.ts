@@ -3,6 +3,7 @@ import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
 import { authMiddleware, adminMiddleware } from '../auth/middleware.js';
 import { eq, and, or, like, count, sql } from 'drizzle-orm';
+import { isValidRole, RDC_PAYROLL_ROLES } from '../types/roles.js';
 import type { AuthVariables } from '../types/auth.js';
 import type { UpdateUserRequest, UpdateRoleRequest } from '../types/user.js';
 
@@ -12,7 +13,7 @@ const usersRoute = new Hono<{ Variables: AuthVariables }>();
 usersRoute.get('/search', authMiddleware, async (c) => {
   try {
     const query = c.req.query('query');
-    const role = c.req.query('role') as 'Admin' | 'Doctor' | 'Nurse' | 'User' | undefined;
+    const role = c.req.query('role');
     const limit = parseInt(c.req.query('limit') || '20');
 
     if (!query) {
@@ -23,15 +24,16 @@ usersRoute.get('/search', authMiddleware, async (c) => {
     const conditions: any[] = [
       or(
         like(users.name, searchTerm),
+        like(users.surname, searchTerm),
         like(users.email, searchTerm)
       ),
     ];
 
-    if (role) {
+    if (role && isValidRole(role)) {
       conditions.push(eq(users.role, role));
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
     const totalResult = await db
@@ -47,6 +49,7 @@ usersRoute.get('/search', authMiddleware, async (c) => {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
       })
       .from(users)
@@ -66,7 +69,7 @@ usersRoute.get('/search', authMiddleware, async (c) => {
 // Get all users
 usersRoute.get('/', authMiddleware, async (c) => {
   try {
-    const role = c.req.query('role') as 'Admin' | 'Doctor' | 'Nurse' | 'User' | undefined;
+    const role = c.req.query('role');
     const limit = parseInt(c.req.query('limit') || '50');
     const offset = parseInt(c.req.query('offset') || '0');
     const search = c.req.query('search');
@@ -74,7 +77,7 @@ usersRoute.get('/', authMiddleware, async (c) => {
     // Build where conditions
     const conditions: any[] = [];
 
-    if (role) {
+    if (role && isValidRole(role)) {
       conditions.push(eq(users.role, role));
     }
 
@@ -83,6 +86,7 @@ usersRoute.get('/', authMiddleware, async (c) => {
       conditions.push(
         or(
           like(users.name, searchTerm),
+          like(users.surname, searchTerm),
           like(users.email, searchTerm)
         )
       );
@@ -104,6 +108,7 @@ usersRoute.get('/', authMiddleware, async (c) => {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
@@ -140,6 +145,7 @@ usersRoute.get('/:id', authMiddleware, async (c) => {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
@@ -187,8 +193,8 @@ usersRoute.put('/:id', authMiddleware, async (c) => {
     }
 
     // Validate that at least one field is provided
-    if (!body.name && !body.email) {
-      return c.json({ error: 'At least one field (name or email) must be provided' }, 400);
+    if (!body.name && !body.surname && !body.email) {
+      return c.json({ error: 'At least one field (name, surname or email) must be provided' }, 400);
     }
 
     // Validate email format if provided
@@ -216,6 +222,7 @@ usersRoute.put('/:id', authMiddleware, async (c) => {
     };
 
     if (body.name) updateData.name = body.name;
+    if (body.surname !== undefined) updateData.surname = body.surname;
     if (body.email) updateData.email = body.email;
 
     const updatedUser = await db
@@ -226,6 +233,7 @@ usersRoute.put('/:id', authMiddleware, async (c) => {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
@@ -251,11 +259,9 @@ usersRoute.put('/:id/role', authMiddleware, adminMiddleware, async (c) => {
       return c.json({ error: 'Invalid user ID' }, 400);
     }
 
-    // Validate role
-    const validRoles = ['Admin', 'Doctor', 'Nurse', 'User'];
-    if (!validRoles.includes(body.role)) {
+    if (!isValidRole(body.role)) {
       return c.json({
-        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+        error: `Invalid role. Must be one of: ${RDC_PAYROLL_ROLES.join(', ')}`,
       }, 400);
     }
 
@@ -293,6 +299,7 @@ usersRoute.put('/:id/role', authMiddleware, adminMiddleware, async (c) => {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,

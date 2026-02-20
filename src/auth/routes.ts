@@ -4,35 +4,46 @@ import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { hashPassword, verifyPassword, generateToken } from './utils.js';
 import { authMiddleware } from './middleware.js';
+import { RDC_PAYROLL_ROLES, isValidRole } from '../types/roles.js';
 import type { LoginRequest, RegisterRequest, AuthResponse, AuthVariables } from '../types/auth.js';
 
 const auth = new Hono<{ Variables: AuthVariables }>();
 
-// Register endpoint
+// Register endpoint - Payroll: requires name, surname, email, role
 auth.post('/register', async (c) => {
   try {
     const body: RegisterRequest = await c.req.json();
-    const { email, password, name, role } = body;
+    const { name, surname, email, role, password } = body;
 
-    // Validate input
-    if (!email || !password || !name) {
-      return c.json({ error: 'Email, password, and name are required' }, 400);
+    // Validate required fields: name, surname, email, role
+    if (!name?.trim()) {
+      return c.json({ error: 'Name is required' }, 400);
+    }
+    if (!surname?.trim()) {
+      return c.json({ error: 'Surname is required' }, 400);
+    }
+    if (!email?.trim()) {
+      return c.json({ error: 'Email is required' }, 400);
+    }
+    if (!role) {
+      return c.json({ error: 'Role is required' }, 400);
+    }
+    if (!password) {
+      return c.json({ error: 'Password is required' }, 400);
     }
 
     if (password.length < 6) {
       return c.json({ error: 'Password must be at least 6 characters long' }, 400);
     }
 
-    // Validate role if provided
-    const validRoles = ['Admin', 'Doctor', 'Nurse', 'User'];
-    if (role && !validRoles.includes(role)) {
+    if (!isValidRole(role)) {
       return c.json({ 
-        error: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
+        error: `Invalid role. Must be one of: ${RDC_PAYROLL_ROLES.join(', ')}` 
       }, 400);
     }
 
     // Check if user already exists
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.email, email.trim())).limit(1);
     if (existingUser.length > 0) {
       return c.json({ error: 'User with this email already exists' }, 409);
     }
@@ -40,14 +51,16 @@ auth.post('/register', async (c) => {
     // Hash password and create user
     const passwordHash = await hashPassword(password);
     const newUser = await db.insert(users).values({
-      email,
+      email: email.trim(),
       passwordHash,
-      name,
-      role: role || 'Nurse', // Use provided role or default to 'Nurse'
+      name: name.trim(),
+      surname: surname.trim(),
+      role,
     }).returning({
       id: users.id,
       email: users.email,
       name: users.name,
+      surname: users.surname,
       role: users.role,
     });
 
@@ -105,6 +118,7 @@ auth.post('/login', async (c) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        surname: user.surname,
         role: user.role,
       },
       token,

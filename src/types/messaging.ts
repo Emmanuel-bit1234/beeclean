@@ -1,9 +1,11 @@
-// User with role
+import type { RdcPayrollRole } from './roles.js';
+
+// User with role (RDC Payroll)
 export interface UserWithRole {
   id: number;
   name: string;
   email: string;
-  role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+  role: RdcPayrollRole;
 }
 
 // Conversation types
@@ -24,7 +26,7 @@ export interface ConversationWithParticipants extends Conversation {
     id: number;
     name: string;
     email: string;
-    role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+    role: RdcPayrollRole;
     joinedAt: Date;
     lastReadAt?: Date | null;
   }>;

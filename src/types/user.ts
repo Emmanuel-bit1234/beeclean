@@ -1,10 +1,13 @@
+import type { RdcPayrollRole } from './roles.js';
+
 export interface UpdateUserRequest {
   name?: string;
+  surname?: string;
   email?: string;
 }
 
 export interface UpdateRoleRequest {
-  role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+  role: RdcPayrollRole;
 }
 
 export interface UserListResponse {
@@ -12,7 +15,8 @@ export interface UserListResponse {
     id: number;
     email: string;
     name: string;
-    role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+    surname: string;
+    role: RdcPayrollRole;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -26,7 +30,8 @@ export interface UserSearchResponse {
     id: number;
     email: string;
     name: string;
-    role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+    surname: string;
+    role: RdcPayrollRole;
   }>;
   total: number;
 }

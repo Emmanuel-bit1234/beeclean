@@ -16,12 +16,13 @@ async function setAdminRole() {
         id: users.id,
         email: users.email,
         name: users.name,
+        surname: users.surname,
         role: users.role,
       });
     
     if (result.length > 0) {
       console.log('✅ Admin user updated successfully:');
-      console.log(`  - ${result[0].name} (${result[0].email}): ${result[0].role}`);
+      console.log(`  - ${result[0].name} ${result[0].surname} (${result[0].email}): ${result[0].role}`);
     } else {
       console.log('⚠️  Admin user not found with email: Admin@edtriage.co.za');
     }
@@ -31,13 +32,14 @@ async function setAdminRole() {
       id: users.id,
       email: users.email,
       name: users.name,
+      surname: users.surname,
       role: users.role,
     }).from(users);
     
     console.log('\n📊 All users and their roles:');
     allUsers.forEach(user => {
-      const roleIcon = user.role === 'Admin' ? '👑' : user.role === 'Doctor' ? '👨‍⚕️' : user.role === 'Nurse' ? '👩‍⚕️' : '👤';
-      console.log(`  ${roleIcon} ${user.name} (${user.email}): ${user.role}`);
+      const roleIcon = user.role === 'Admin' ? '👑' : user.role === 'Ministre' || user.role === 'President' ? '🏛️' : '👤';
+      console.log(`  ${roleIcon} ${user.name} ${user.surname} (${user.email}): ${user.role}`);
     });
     
     process.exit(0);

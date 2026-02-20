@@ -1,13 +1,16 @@
+import type { RdcPayrollRole } from './roles.js';
+
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
 export interface RegisterRequest {
-  email: string;
-  password: string;
   name: string;
-  role?: 'Admin' | 'Doctor' | 'Nurse' | 'User'; // Optional, defaults to 'Nurse'
+  surname: string;
+  email: string;
+  role: RdcPayrollRole;
+  password: string;
 }
 
 export interface AuthResponse {
@@ -15,7 +18,8 @@ export interface AuthResponse {
     id: number;
     email: string;
     name: string;
-    role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+    surname: string;
+    role: RdcPayrollRole;
   };
   token: string;
 }
@@ -31,7 +35,8 @@ export interface AuthenticatedUser {
   id: number;
   email: string;
   name: string;
-  role: 'Admin' | 'Doctor' | 'Nurse' | 'User';
+  surname: string;
+  role: RdcPayrollRole;
 }
 
 export interface AuthVariables {

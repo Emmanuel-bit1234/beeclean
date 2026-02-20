@@ -28,6 +28,7 @@ export async function authMiddleware(c: Context<{ Variables: AuthVariables }>, n
       id: users.id,
       email: users.email,
       name: users.name,
+      surname: users.surname,
       role: users.role,
     }).from(users).where(eq(users.id, payload.userId)).limit(1);
 
@@ -57,6 +58,7 @@ export async function optionalAuthMiddleware(c: Context<{ Variables: AuthVariabl
           id: users.id,
           email: users.email,
           name: users.name,
+          surname: users.surname,
           role: users.role,
         }).from(users).where(eq(users.id, payload.userId)).limit(1);
 

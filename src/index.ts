@@ -3,10 +3,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import auth from "./auth/routes.js";
 import usersRoute from "./routes/users.js";
-import { authMiddleware } from "./auth/middleware.js";
-import { db } from "./db/connection.js";
+import { RDC_PAYROLL_ROLES } from "./types/roles.js";
 import type { AuthVariables } from "./types/auth.js";
-import type { PredictionResponse } from "./types/prediction.js";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
@@ -20,6 +18,11 @@ app.get("/", (c) => {
     status: "running",
     version: "1.0.0",
   });
+});
+
+// RDC Payroll: list allowed roles (hiérarchie + structure interne ministère)
+app.get("/roles", (c) => {
+  return c.json({ roles: [...RDC_PAYROLL_ROLES] });
 });
 
 // Authentication routes
