@@ -128,7 +128,7 @@
 ```
 - `totalEmployees`: count of active employees.  
 - `totalBudget`: sum of current-month budgets (string number).  
-- `totalBudgetSpent`: sum of paid payslips for current period (string number).  
+- `totalBudgetSpent`: sum of payslips (net) for current period where run is `payment_done`/`reconciled` or payslip has `paid_at` set (string number).  
 - `activePayrolls`: runs not draft and not reconciled.  
 - `pendingVerifications`: count of verification steps with status `pending`.  
 - `unreadMessages`: count of messages with `readAt` null.  

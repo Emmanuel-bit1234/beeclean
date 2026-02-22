@@ -10,7 +10,7 @@ import {
   messages,
 } from '../db/schema.js';
 import { authMiddleware } from '../auth/middleware.js';
-import { eq, and, sql, inArray, isNotNull } from 'drizzle-orm';
+import { eq, and, sql, inArray, isNotNull, or } from 'drizzle-orm';
 import type { AuthVariables } from '../types/auth.js';
 
 const route = new Hono<{ Variables: AuthVariables }>();
@@ -36,7 +36,8 @@ route.get('/', authMiddleware, async (c) => {
       .where(and(eq(budgets.periodMonth, currentMonth), eq(budgets.periodYear, currentYear)));
     const totalBudget = budgetRows.reduce((sum, r) => sum + Number(r.amount ?? 0), 0);
 
-    // Total spent: sum of net from payslips that are paid and belong to current period runs
+    // Total spent: payslips from current period where run is payment_done/reconciled OR payslip has paid_at set
+    const spentStatuses = ['payment_done', 'reconciled'] as const;
     const paidThisMonth = await db
       .select({ net: payslips.net })
       .from(payslips)
@@ -45,7 +46,7 @@ route.get('/', authMiddleware, async (c) => {
         and(
           eq(payrollRuns.periodMonth, currentMonth),
           eq(payrollRuns.periodYear, currentYear),
-          isNotNull(payslips.paidAt)
+          or(isNotNull(payslips.paidAt), inArray(payrollRuns.status, spentStatuses))
         )
       );
     const totalSpent = paidThisMonth.reduce((sum, r) => sum + Number(r.net ?? 0), 0);
