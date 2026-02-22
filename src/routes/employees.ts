@@ -121,13 +121,43 @@ route.get('/:id', authMiddleware, async (c) => {
   });
 });
 
-// Create employee (admin)
+/**
+ * Generate next employee number for a ministry: {ministryCode}-{seq}, e.g. FIN-001, BUD-002.
+ * If frontend sends employeeNumber, it is used; otherwise we auto-generate from ministry.
+ */
+async function generateEmployeeNumber(ministryId: number): Promise<string> {
+  const [ministry] = await db
+    .select({ code: ministries.code })
+    .from(ministries)
+    .where(eq(ministries.id, ministryId))
+    .limit(1);
+  if (!ministry) throw new Error('Ministry not found');
+  const prefix = ministry.code.trim().toUpperCase();
+  const existing = await db
+    .select({ employeeNumber: employees.employeeNumber })
+    .from(employees)
+    .where(eq(employees.ministryId, ministryId));
+  const regex = new RegExp(`^${escapeRegex(prefix)}-(\\d+)$`, 'i');
+  let maxNum = 0;
+  for (const row of existing) {
+    const m = row.employeeNumber.match(regex);
+    if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+  }
+  const nextNum = maxNum + 1;
+  return `${prefix}-${String(nextNum).padStart(3, '0')}`;
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Create employee (admin). employeeNumber is optional; auto-generated from ministry if omitted.
 route.post('/', authMiddleware, adminMiddleware, async (c) => {
   try {
     const body = await c.req.json() as {
       ministryId: number;
       departmentId?: number;
-      employeeNumber: string;
+      employeeNumber?: string;
       name: string;
       surname: string;
       position: string;
@@ -140,7 +170,7 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
     const {
       ministryId,
       departmentId,
-      employeeNumber,
+      employeeNumber: bodyEmployeeNumber,
       name,
       surname,
       position,
@@ -150,15 +180,19 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
       mobileMoneyProvider,
       mobileMoneyNumber,
     } = body;
-    if (!ministryId || !employeeNumber || !name || !surname || !position || salary == null) {
-      return c.json({ error: 'ministryId, employeeNumber, name, surname, position, salary required' }, 400);
+    if (!ministryId || !name || !surname || !position || salary == null) {
+      return c.json({ error: 'ministryId, name, surname, position, salary required' }, 400);
     }
+    const mid = Number(ministryId);
+    const employeeNumber = bodyEmployeeNumber?.trim()
+      ? String(bodyEmployeeNumber).trim()
+      : await generateEmployeeNumber(mid);
     const [created] = await db
       .insert(employees)
       .values({
-        ministryId: Number(ministryId),
+        ministryId: mid,
         departmentId: departmentId != null ? Number(departmentId) : null,
-        employeeNumber: String(employeeNumber).trim(),
+        employeeNumber,
         name: String(name).trim(),
         surname: String(surname).trim(),
         position: String(position).trim(),
@@ -171,6 +205,10 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
       .returning();
     return c.json({ employee: created }, 201);
   } catch (e) {
+    const err = e as Error;
+    if (err?.message === 'Ministry not found') {
+      return c.json({ error: 'Ministry not found' }, 404);
+    }
     console.error(e);
     return c.json({ error: 'Failed to create employee' }, 500);
   }

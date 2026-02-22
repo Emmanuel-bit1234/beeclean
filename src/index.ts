@@ -73,12 +73,18 @@ app.route("/sanctions", sanctionsRoute);
 app.route("/excel-uploads", excelUploadsRoute);
 app.route("/mobile-money", mobileMoneyRoute);
 
-serve(
-  {
-    fetch: app.fetch,
-    port: 3005,
-  },
-  (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
-  },
-);
+// Export for Vercel serverless (Vercel uses default export; all routes become serverless functions)
+export default app;
+
+// Run Node server only when NOT on Vercel (local dev or other hosting)
+if (process.env.VERCEL !== "1") {
+  serve(
+    {
+      fetch: app.fetch,
+      port: Number(process.env.PORT) || 3005,
+    },
+    (info) => {
+      console.log(`Server is running on http://localhost:${info.port}`);
+    },
+  );
+}

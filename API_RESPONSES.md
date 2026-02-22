@@ -443,7 +443,8 @@
 **404:** `{ "error": "Employee not found" }`
 
 ### `POST /employees` (auth, Admin)
-**Body:** `{ "ministryId", "employeeNumber", "name", "surname", "position", "salary", "departmentId"?, "bankAccount"?, "bankName"?, "mobileMoneyProvider"?, "mobileMoneyNumber"?, ... }`  
+**Body:** `{ "ministryId", "name", "surname", "position", "salary", "employeeNumber"?, "departmentId"?, "bankAccount"?, "bankName"?, "mobileMoneyProvider"?, "mobileMoneyNumber"?, ... }`  
+**Note:** `employeeNumber` is **optional**. If omitted, the backend auto-generates it from the ministry (format: `{ministryCode}-{seq}`, e.g. `FIN-001`, `BUD-002`).  
 **Response 201**
 ```json
 {
