@@ -172,6 +172,8 @@ export const payrollReports = pgTable('payroll_reports', {
   reportType: reportTypeEnum('report_type').notNull(),
   fileUrl: varchar('file_url', { length: 512 }),
   fileName: varchar('file_name', { length: 255 }),
+  /** Base64-encoded file content when report is uploaded via POST body (fileBase64). Not returned in API JSON; use GET /payroll-reports/:id/file to download. */
+  fileContentBase64: text('file_content_base64'),
   uploadedByUserId: integer('uploaded_by_user_id').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -717,14 +717,42 @@
 ```
 **404:** `{ "error": "Report not found" }`
 
+### `GET /payroll-reports/:id/file` (auth)
+**Description:** Download the report file when it was uploaded as base64.  
+**Response 200:** Binary file (e.g. PDF) with headers `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="..."`.  
+**404:** `{ "error": "Report file not found" }` (no base64 stored for this report).
+
 ### `POST /payroll-reports` (auth, Admin)
-**Body:** `{ "periodMonth", "periodYear", "reportType", "payrollRunId"?, "ministryId"?, "fileUrl"?, "fileName"? }`  
+**Approach (choose one):**
+1. **Base64 (inline):** Send `fileBase64` (string) and `fileName` in the JSON body. The backend stores the file and sets `fileUrl` to the download URL (`/payroll-reports/:id/file`).
+2. **External URL:** Frontend uploads file to cloud storage, then sends `fileUrl` and optional `fileName` here.
+
+**Body (JSON):** `{ "periodMonth", "periodYear", "reportType", "payrollRunId"?, "ministryId"?, "fileUrl"?, "fileName"?, "fileBase64"? }`  
+- If `fileBase64` is provided, `fileName` is **required**.  
 **Response 201**
 ```json
 {
-  "report": { full report object }
+  "report": {
+    "id": 1,
+    "payrollRunId": null,
+    "ministryId": null,
+    "periodMonth": 2,
+    "periodYear": 2026,
+    "reportType": "monthly",
+    "fileUrl": "https://.../payroll-reports/1/file",
+    "fileName": "report-fevrier-2026.pdf",
+    "uploadedByUserId": 1,
+    "createdAt": "string"
+  }
 }
 ```
+**400:** `fileName is required when fileBase64 is provided` if base64 is sent without fileName.
+
+### `POST /payroll-reports/upload` (auth, Admin) — Alternative
+**Approach:** Backend handles file upload directly (requires cloud storage configured).  
+**Body (multipart/form-data):** `file` (File), `periodMonth`, `periodYear`, `reportType`, `payrollRunId?`, `ministryId?`  
+**Response 201** (if storage configured) or **501** (if not configured)  
+**Note:** Currently returns 501. To enable, configure cloud storage (Vercel Blob, S3, etc.) and implement upload logic. See `FILE_UPLOAD_GUIDE.md` for details.
 
 ---
 

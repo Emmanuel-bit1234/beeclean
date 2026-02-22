@@ -70,7 +70,41 @@ Pour les listes déroulantes :
 
 **Rapports (PDF) liés au cycle :**
 - Lister → **GET** `/payroll-reports?payroll_run_id=:id` → `reports[]`
-- Déposer un rapport → **POST** `/payroll-reports` (payrollRunId, reportType, fileUrl, fileName, …)
+- Déposer un rapport (plusieurs options) :
+  - **Option base64 (recommandée, sans cloud) :** **POST** `/payroll-reports` avec `{ periodMonth, periodYear, reportType, fileName, fileBase64 }`. Le backend stocke le fichier et renvoie `fileUrl` pointant vers **GET** `/payroll-reports/:id/file` pour le téléchargement.
+  - **Option URL externe :** Frontend upload le fichier vers un stockage cloud (S3, Vercel Blob, etc.), obtient l’URL, puis appelle **POST** `/payroll-reports` avec `{ payrollRunId?, ministryId?, periodMonth, periodYear, reportType, fileUrl, fileName }`.
+  - **Option multipart (à configurer) :** **POST** `/payroll-reports/upload` avec `multipart/form-data`. Nécessite un stockage cloud configuré côté backend.
+
+### Comment fonctionne le Traitement de la Paie (workflow)
+
+1. **Choix de la période (ex. février 2026)**  
+   - Appeler **GET** `/payroll-runs?period_month=2&period_year=2026`.  
+   - S’il n’y a aucun cycle → afficher « Aucune paie trouvée pour cette période » et le bouton **Créer un cycle de paie**.
+
+2. **Créer un cycle de paie**  
+   - Au clic sur « Créer un cycle de paie », envoyer **POST** `/payroll-runs` avec `{ "periodMonth": 2, "periodYear": 2026, "budgetTotal": "..." }` (optionnel).  
+   - Le cycle est créé en statut **Brouillon** (`draft`).  
+   - Afficher **Période** (ex. février 2026), **Montant total** (`payrollRun.budgetTotal`), **Statut** (`payrollRun.status` → ex. « Brouillon »).
+
+3. **Workflow en 5 étapes (validation à chaque étape)**  
+   - **Étape 1 – Rapport :** Le rapport du mois doit être lu et accepté. Déposer un rapport (PDF) via **POST** `/payroll-reports`, puis valider l’étape avec **PUT** `/payroll-runs/:id/step` et `{ "stepName": "report_uploaded" }`.  
+   - **Étape 2 – Audit (Ministère du Budget) :** Vérification du rapport. Valider avec `{ "stepName": "audit_approved" }`.  
+   - **Étape 3 – Autorisation (Ministère des Finances) :** Autorisation de paiement. Valider avec `{ "stepName": "auth_approved" }`.  
+   - **Étape 4 – Paiement (Banque) :** Générer les bulletins si besoin (**POST** `/payroll-runs/:id/generate-payslips`), puis marquer les bulletins payés (**PUT** `/payslips/:id/paid`). Ensuite valider avec `{ "stepName": "payment_done" }`.  
+   - **Étape 5 – Réconciliation :** Le rapport de paie se ferme et doit correspondre au budget. Valider avec `{ "stepName": "reconciled" }`.
+
+4. **Résumé à afficher (Période, Montant total, Statut)**  
+   - Pour la période choisie : **GET** `/payroll-runs?period_month=&period_year=` → prendre le premier `payrollRun` (ou **GET** `/payroll-runs/:id` si vous avez déjà l’id).  
+   - **Période** = `periodMonth` / `periodYear` (ex. « février 2026 »).  
+   - **Montant total** = `budgetTotal` (ou somme des payslips si vous la calculez côté front).  
+   - **Statut** = `status` (draft → Brouillon, report_uploaded, audit_approved, auth_approved, payment_done, reconciled).
+
+5. **Télécharger le rapport**  
+   - **GET** `/payroll-reports?payroll_run_id=:id` pour lister les rapports du cycle.  
+   - Chaque `report` a `fileUrl` et `fileName` : utiliser `fileUrl` pour le lien de téléchargement (ou ouvrir dans un nouvel onglet).
+
+6. **Notes de réconciliation**  
+   - Texte informatif côté UI uniquement. Après « payment_done », l’étape « reconciled » sert à clôturer le cycle et à aligner avec le budget ; les corrections (ex. taxes) peuvent être gérées via budgets / rapports.
 
 ---
 
@@ -126,7 +160,8 @@ Le fichier lui-même est hébergé ailleurs ; l’API stocke uniquement les mét
 | Liste des rapports | GET | `/payroll-reports` | `reports[]` |
 | Filtres | GET | `/payroll-reports?payroll_run_id=&ministry_id=&period_month=&period_year=&report_type=` | idem |
 | Détail d’un rapport | GET | `/payroll-reports/:id` | `report` (reportType, fileUrl, fileName, periodMonth, periodYear) |
-| Déposer un rapport (Admin) | POST | `/payroll-reports` | Body: periodMonth, periodYear, reportType, payrollRunId?, fileUrl?, fileName? → `report` |
+| Télécharger le fichier (si envoyé en base64) | GET | `/payroll-reports/:id/file` | Fichier binaire (PDF) |
+| Déposer un rapport (Admin) | POST | `/payroll-reports` | Body: periodMonth, periodYear, reportType, payrollRunId?, ministryId?, fileUrl?, fileName? **ou** fileBase64 + fileName → `report` |
 
 **reportType :** `monthly` \| `audit` \| `authorisation` \| `payment` \| `reconciliation`
 
