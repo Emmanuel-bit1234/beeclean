@@ -93,6 +93,10 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
     if (ministryId == null || periodMonth == null || periodYear == null || amount == null) {
       return c.json({ error: 'ministryId, periodMonth, periodYear, amount required' }, 400);
     }
+    const amountNum = Number(amount);
+    if (Number.isNaN(amountNum) || amountNum < 0) {
+      return c.json({ error: 'amount must be a non-negative number' }, 400);
+    }
     const [created] = await db
       .insert(budgets)
       .values({
@@ -132,6 +136,8 @@ route.put('/:id', authMiddleware, adminMiddleware, async (c) => {
 route.delete('/:id', authMiddleware, adminMiddleware, async (c) => {
   const id = parseInt(c.req.param('id'), 10);
   if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
+  const [existing] = await db.select().from(budgets).where(eq(budgets.id, id)).limit(1);
+  if (!existing) return c.json({ error: 'Budget not found' }, 404);
   await db.delete(budgets).where(eq(budgets.id, id));
   return c.json({ message: 'Budget deleted' });
 });
