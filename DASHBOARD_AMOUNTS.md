@@ -4,16 +4,16 @@ This document explains why the Tableau de bord can show **0 FC dépensés** and 
 
 ---
 
-## DB verification (historical note)
+## DB verification (current behaviour)
 
-A direct DB check (see `scripts/check-paid-payslips.ts`) showed that no payslip had **`paid_at`** set. The dashboard **now** counts as "spent" not only payslips with `paid_at` set, but also **all payslips from runs with status `payment_done` or `reconciled`** for the current period. So if février 2026 is "Réconcilié" on Traitement de la Paie, the Tableau de bord will show that run’s total (e.g. 650 000 000 FC) in "dépensés" without requiring individual `paid_at` to be set.
+Using `scripts/check-paid-payslips.ts` and the current dashboard code, we can see for example that there is a payroll run for **février 2026** with status `reconciled` and `budgetTotal = 650 000 000 FC`. The dashboard now counts as "spent" the **sum of `budgetTotal`** for all runs in the current period whose status is `payment_done` or `reconciled`. So if février 2026 is "Réconcilié" on Traitement de la Paie, the Tableau de bord will show **650 000 000 FC** in "dépensés" even if no payslips have been generated yet.
 
 ---
 
 ## Traitement de la Paie vs Tableau de bord
 
 - **totalBudgetSpent** on the Tableau de bord is only for the **current** calendar month and year (e.g. February 2026). It does **not** include other periods (e.g. décembre 2025).
-- The dashboard counts as "spent" **payslips from runs for the current period** where **either** the run status is **payment_done** or **reconciled**, **or** the payslip has **`paid_at`** set. So when **février 2026** is "Payé" / "Réconcilié" on Traitement de la Paie, the Tableau de bord will show that run’s total (e.g. 650 000 000 FC) under "dépensés". Décembre 2025 is not included because it is a different period.
+- The dashboard counts as "spent" the **`budgetTotal`** of runs for the current period whose status is **`payment_done`** or **`reconciled`**. So when **février 2026** is "Payé" / "Réconcilié" on Traitement de la Paie with Montant total 650 000 000 FC, the Tableau de bord will show **650 000 000 FC** under "dépensés". Décembre 2025 is not included because it is a different period.
 
 ---
 
@@ -21,11 +21,11 @@ A direct DB check (see `scripts/check-paid-payslips.ts`) showed that no payslip 
 
 **"Dépensés"** is the sum of money considered **spent** for the current period.
 
-- The backend sets **totalBudgetSpent** = sum of **net** from **payslips** where:
-  - the payslip belongs to a payroll run for the **current month and year**, and  
-  - **either** the payslip has **paidAt** set **or** the run status is **payment_done** or **reconciled**.
+- The backend sets **totalBudgetSpent** = sum of **`payroll_runs.budgetTotal`** where:
+  - the run belongs to the **current month and year**, and  
+  - the run status is **`payment_done`** or **`reconciled`**.
 
-So when a run for the current period (e.g. février 2026) is marked "Paiement" completed or "Réconcilié" on Traitement de la Paie, its payslips are included in "dépensés" even if individual `paid_at` was not set. The "Paiements à Venir" section shows **planned** amounts; they do not increase "dépensés" until the run reaches payment_done/reconciled or payslips are marked paid.
+So when a run for the current period (e.g. février 2026) is marked "Paiement" complété or "Réconcilié" on Traitement de la Paie, its `budgetTotal` is included in "dépensés". The "Paiements à Venir" section shows **planned** amounts; they do not increase "dépensés" until there is at least one run in `payment_done`/`reconciled` for that period.
 
 ---
 
@@ -103,7 +103,7 @@ To get a non-zero amount for a ministry in "Paiements à Venir", ensure there is
 |-------|-------------|
 | **totalEmployees** | Count of active employees. |
 | **totalBudget** | Sum of current-month budgets (string). |
-| **totalBudgetSpent** | Sum of **paid** payslips (net) for current-month runs (string). |
+| **totalBudgetSpent** | Sum of `budgetTotal` for current-month payroll runs in status `payment_done` or `reconciled` (string). |
 | **activePayrolls** | Number of payroll runs that are not draft and not reconciled. |
 | **pendingVerifications** | Count of verification steps with status `pending`. |
 | **unreadMessages** | Count of messages with `readAt` null. |

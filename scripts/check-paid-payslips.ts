@@ -5,7 +5,7 @@
 import 'dotenv/config';
 import { db } from '../src/db/connection.js';
 import { payrollRuns, payslips } from '../src/db/schema.js';
-import { and, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql, inArray } from 'drizzle-orm';
 
 async function main() {
   const now = new Date();
@@ -75,6 +75,35 @@ async function main() {
     console.log('totalBudgetSpent would be:', totalSpent);
   } else {
     console.log('No payslips match → totalBudgetSpent = 0');
+  }
+
+  console.log('');
+  console.log('--- Dashboard totalBudgetSpent (CURRENT CODE) ---');
+  console.log('(sum of payroll_runs.budgetTotal for current period where status is payment_done or reconciled)');
+  const spentStatuses = ['payment_done', 'reconciled'] as const;
+  const spentRuns = await db
+    .select({
+      id: payrollRuns.id,
+      status: payrollRuns.status,
+      budgetTotal: payrollRuns.budgetTotal,
+      periodMonth: payrollRuns.periodMonth,
+      periodYear: payrollRuns.periodYear,
+    })
+    .from(payrollRuns)
+    .where(
+      and(
+        eq(payrollRuns.periodMonth, currentMonth),
+        eq(payrollRuns.periodYear, currentYear),
+        inArray(payrollRuns.status, spentStatuses)
+      )
+    );
+  console.log('Count:', spentRuns.length);
+  if (spentRuns.length > 0) {
+    console.table(spentRuns);
+    const totalBudgetSpent = spentRuns.reduce((s, r) => s + Number(r.budgetTotal ?? 0), 0);
+    console.log('totalBudgetSpent (dashboard) would be:', totalBudgetSpent);
+  } else {
+    console.log('No runs match → totalBudgetSpent (dashboard) = 0');
   }
 
   process.exit(0);

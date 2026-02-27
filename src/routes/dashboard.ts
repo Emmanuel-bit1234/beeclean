@@ -36,20 +36,23 @@ route.get('/', authMiddleware, async (c) => {
       .where(and(eq(budgets.periodMonth, currentMonth), eq(budgets.periodYear, currentYear)));
     const totalBudget = budgetRows.reduce((sum, r) => sum + Number(r.amount ?? 0), 0);
 
-    // Total spent: payslips from current period where run is payment_done/reconciled OR payslip has paid_at set
+    // Total spent: sum of budgetTotal from payroll runs for the current period
+    // that have reached payment_done or reconciled in Traitement de la Paie.
     const spentStatuses = ['payment_done', 'reconciled'] as const;
-    const paidThisMonth = await db
-      .select({ net: payslips.net })
-      .from(payslips)
-      .innerJoin(payrollRuns, eq(payslips.payrollRunId, payrollRuns.id))
+    const spentRuns = await db
+      .select({ budgetTotal: payrollRuns.budgetTotal })
+      .from(payrollRuns)
       .where(
         and(
           eq(payrollRuns.periodMonth, currentMonth),
           eq(payrollRuns.periodYear, currentYear),
-          or(isNotNull(payslips.paidAt), inArray(payrollRuns.status, spentStatuses))
+          inArray(payrollRuns.status, spentStatuses)
         )
       );
-    const totalSpent = paidThisMonth.reduce((sum, r) => sum + Number(r.net ?? 0), 0);
+    const totalSpent = spentRuns.reduce(
+      (sum, r) => sum + Number(r.budgetTotal ?? 0),
+      0
+    );
 
     // Active payrolls: runs not draft and not reconciled
     const activeStatuses = [

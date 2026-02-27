@@ -51,13 +51,13 @@ Authorization: Bearer <your-jwt>
 The backend:
 
 1. Takes **current month** and **current year** from the server date (e.g. February = 2, 2026).
-2. Selects all **payslips** that:
-   - belong to a **payroll run** with `periodMonth` = current month and `periodYear` = current year, and  
-   - **either** that run’s status is **`payment_done`** or **`reconciled`**, **or** the payslip has **`paid_at`** set.
-3. Sums the **`net`** of those payslips.
+2. Selects all **payroll runs** that:
+   - have `periodMonth` = current month and `periodYear` = current year, and  
+   - have `status` = **`payment_done`** or **`reconciled`**.
+3. Sums the **`budgetTotal`** of those runs.
 4. Returns that sum as the string **`totalBudgetSpent`**.
 
-So: only the **current** period is included. Runs for other months (e.g. décembre 2025) are ignored. Within the current period, any run that is "Paiement" done or "Réconcilié" has all its payslips counted, even if `paid_at` is not set on each slip.
+So: only the **current** period is included. Runs for other months (e.g. décembre 2025) are ignored. Within the current period, any run that is "Paiement" done or "Réconcilié" contributes its **Montant total (`budgetTotal`)** directly to "dépensés", even if no payslips exist yet.
 
 ---
 
@@ -86,7 +86,7 @@ Quick test: call `GET /dashboard` with a valid token (e.g. from the browser’s 
 | What is dépensés? | Total FC spent for the **current** month/year. |
 | Where does it come from? | **GET /dashboard** → **`totalBudgetSpent`** (string). |
 | What does the frontend do? | Call GET /dashboard with auth and display **`totalBudgetSpent`** as "X FC dépensés". |
-| How is it computed? | Sum of payslips (net) for current-period runs that are `payment_done` or `reconciled`, or have `paid_at` set. |
+| How is it computed? | Sum of `budgetTotal` for current-period payroll runs that are `payment_done` or `reconciled`. |
 | Why 0? | Wrong endpoint/field, no auth, backend not updated, or no run for current period in `payment_done`/`reconciled`. |
 
 Use this file as the single reference for "dépensés" in the Tableau de bord.
