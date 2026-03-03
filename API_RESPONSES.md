@@ -28,6 +28,38 @@
 
 ---
 
+## 2. Emails (auth)
+
+### `POST /emails` (auth, Admin)
+**Description:** Send an email to a specific employee using the email stored on the employee record. Also logs the message in the internal `messages` table as a general message.
+
+**Body:**
+```json
+{
+  "employeeId": 3,
+  "subject": "Notification de paie février 2026",
+  "body": "Bonjour, votre paie de février 2026 a été traitée."
+}
+```
+
+**Response 201**
+```json
+{
+  "status": "sent",
+  "to": "employee@example.com",
+  "employeeId": 3
+}
+```
+
+**Errors**
+- **400** – `employeeId, subject, body required` or `Employee has no email on record`
+- **404** – `Employee not found`
+- **500** – `Failed to send email`
+
+> Note: The actual delivery uses SMTP settings from environment variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`). No external API key is required; standard SMTP credentials are used.
+
+---
+
 ## 2. Auth
 
 ### `POST /auth/register`

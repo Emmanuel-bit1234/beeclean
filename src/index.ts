@@ -16,6 +16,7 @@ import sanctionsRoute from "./routes/sanctions.js";
 import excelUploadsRoute from "./routes/excel-uploads.js";
 import mobileMoneyRoute from "./routes/mobile-money.js";
 import dashboardRoute from "./routes/dashboard.js";
+import emailsRoute from "./routes/emails.js";
 import { RDC_PAYROLL_ROLES } from "./types/roles.js";
 import type { AuthVariables } from "./types/auth.js";
 
@@ -72,6 +73,7 @@ app.route("/messages", messagesRoute);
 app.route("/sanctions", sanctionsRoute);
 app.route("/excel-uploads", excelUploadsRoute);
 app.route("/mobile-money", mobileMoneyRoute);
+app.route("/emails", emailsRoute);
 
 // Export for Vercel serverless (Vercel uses default export; all routes become serverless functions)
 export default app;
