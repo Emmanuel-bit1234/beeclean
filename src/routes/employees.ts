@@ -50,6 +50,7 @@ route.get('/', authMiddleware, async (c) => {
         employeeNumber: employees.employeeNumber,
         name: employees.name,
         surname: employees.surname,
+        email: employees.email,
         position: employees.position,
         salary: employees.salary,
         status: employees.status,
@@ -160,6 +161,7 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
       employeeNumber?: string;
       name: string;
       surname: string;
+      email: string;
       position: string;
       salary: string | number;
       bankAccount?: string;
@@ -173,6 +175,7 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
       employeeNumber: bodyEmployeeNumber,
       name,
       surname,
+      email,
       position,
       salary,
       bankAccount,
@@ -180,8 +183,14 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
       mobileMoneyProvider,
       mobileMoneyNumber,
     } = body;
-    if (!ministryId || !name || !surname || !position || salary == null) {
-      return c.json({ error: 'ministryId, name, surname, position, salary required' }, 400);
+    if (!ministryId || !name || !surname || !email || !position || salary == null) {
+      return c.json({ error: 'ministryId, name, surname, email, position, salary required' }, 400);
+    }
+    if (!bankAccount || !bankName) {
+      return c.json({ error: 'bankAccount and bankName are required' }, 400);
+    }
+    if (mobileMoneyProvider && mobileMoneyProvider !== 'none' && !mobileMoneyNumber?.trim()) {
+      return c.json({ error: 'mobileMoneyNumber is required when mobileMoneyProvider is not none' }, 400);
     }
     const mid = Number(ministryId);
     const employeeNumber = bodyEmployeeNumber?.trim()
@@ -195,6 +204,7 @@ route.post('/', authMiddleware, adminMiddleware, async (c) => {
         employeeNumber,
         name: String(name).trim(),
         surname: String(surname).trim(),
+        email: String(email).trim(),
         position: String(position).trim(),
         salary: String(salary),
         bankAccount: bankAccount?.trim() || null,
@@ -220,7 +230,7 @@ route.put('/:id', authMiddleware, adminMiddleware, async (c) => {
   if (isNaN(id)) return c.json({ error: 'Invalid ID' }, 400);
   const body = await c.req.json() as Record<string, unknown>;
   const allowed = [
-    'ministryId', 'departmentId', 'employeeNumber', 'name', 'surname', 'position', 'salary',
+    'ministryId', 'departmentId', 'employeeNumber', 'name', 'surname', 'email', 'position', 'salary',
     'status', 'bankAccount', 'bankName', 'mobileMoneyProvider', 'mobileMoneyNumber',
     'fingerprintHash', 'faceHash',
   ];

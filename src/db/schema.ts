@@ -94,7 +94,7 @@ export const departments = pgTable('departments', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// ─── Employees (state DB: position, salary, bank/mobile money) ─────────────
+// ─── Employees (state DB: position, salary, contact, bank/mobile money) ────
 export const employees = pgTable('employees', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
@@ -105,6 +105,7 @@ export const employees = pgTable('employees', {
   employeeNumber: varchar('employee_number', { length: 50 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   surname: varchar('surname', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }),
   position: varchar('position', { length: 255 }).notNull(),
   salary: decimal('salary', { precision: 18, scale: 2 }).notNull(),
   status: employeeStatusEnum('status').notNull().default('active'),

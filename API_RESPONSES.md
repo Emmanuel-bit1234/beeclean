@@ -443,8 +443,26 @@
 **404:** `{ "error": "Employee not found" }`
 
 ### `POST /employees` (auth, Admin)
-**Body:** `{ "ministryId", "name", "surname", "position", "salary", "employeeNumber"?, "departmentId"?, "bankAccount"?, "bankName"?, "mobileMoneyProvider"?, "mobileMoneyNumber"?, ... }`  
-**Note:** `employeeNumber` is **optional**. If omitted, the backend auto-generates it from the ministry (format: `{ministryCode}-{seq}`, e.g. `FIN-001`, `BUD-002`).  
+**Body:**  
+```json
+{
+  "ministryId": 1,
+  "departmentId": 2,
+  "employeeNumber": "optional",
+  "name": "string",
+  "surname": "string",
+  "email": "string",
+  "position": "string",
+  "salary": "1500.00",
+  "bankAccount": "0123456789",
+  "bankName": "Rawbank",
+  "mobileMoneyProvider": "mpesa",
+  "mobileMoneyNumber": "+243970000000"
+}
+```  
+- `employeeNumber` is **optional**. If omitted, the backend auto-generates it from the ministry (format: `{ministryCode}-{seq}`, e.g. `FIN-001`, `BUD-002`).  
+- `email`, `bankAccount`, and `bankName` are **required**.  
+- If `mobileMoneyProvider` is not `none`, `mobileMoneyNumber` is **required**.  
 **Response 201**
 ```json
 {
@@ -456,13 +474,14 @@
     "employeeNumber": "EMP-001",
     "name": "string",
     "surname": "string",
+    "email": "string",
     "position": "string",
     "salary": "1500.00",
     "status": "active",
-    "bankAccount": null,
-    "bankName": null,
-    "mobileMoneyProvider": "none",
-    "mobileMoneyNumber": null,
+    "bankAccount": "0123456789",
+    "bankName": "Rawbank",
+    "mobileMoneyProvider": "mpesa",
+    "mobileMoneyNumber": "+243970000000",
     "fingerprintHash": null,
     "faceHash": null,
     "verifiedAt": null,
