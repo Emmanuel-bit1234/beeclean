@@ -130,7 +130,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-```json
+```json/
 {
   "employeeId": 3,
   "subject": "Notification de paie février 2026",
