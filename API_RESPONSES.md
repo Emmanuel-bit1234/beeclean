@@ -422,6 +422,7 @@
       "employeeNumber": "EMP-001",
       "name": "string",
       "surname": "string",
+      "email": "string | null",
       "position": "string",
       "salary": "5000.00",
       "status": "active",
@@ -430,6 +431,7 @@
       "mobileMoneyProvider": "mpesa | airtel_money | orange_money | none",
       "mobileMoneyNumber": "string | null",
       "verifiedAt": "2026-02-22T12:00:00.000Z | null",
+      "createdAt": "2026-02-22T12:00:00.000Z",
       "ministryName": "string | null",
       "departmentName": "string | null"
     }
@@ -439,6 +441,7 @@
   "offset": 0
 }
 ```
+- `createdAt` = date the employee was added (ISO 8601).
 
 ### `GET /employees/:id` (auth)
 **Response 200**

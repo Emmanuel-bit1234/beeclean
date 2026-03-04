@@ -59,6 +59,7 @@ route.get('/', authMiddleware, async (c) => {
         mobileMoneyProvider: employees.mobileMoneyProvider,
         mobileMoneyNumber: employees.mobileMoneyNumber,
         verifiedAt: employees.verifiedAt,
+        createdAt: employees.createdAt,
         ministryName: ministries.name,
         departmentName: departments.name,
       })
